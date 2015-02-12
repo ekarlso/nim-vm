@@ -1,0 +1,13 @@
+#!/bin/bash
+
+DIR="$(command cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+source "$DIR/nim-vm.sh"
+
+if [ -n "$NIM_VERSION" ]; then
+  nimvm use $NIM_VERSION > /dev/null || (echo "NIM_VERSION not set" >&2 && exit 127)
+else
+  nimvm use > /dev/null || (echo "No .nimrc file found" >&2 && exit 127)
+fi
+
+exec $@

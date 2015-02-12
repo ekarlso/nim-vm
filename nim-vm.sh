@@ -6,6 +6,8 @@ NIM_REPO=http://github.com/Araq/Nim.git
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nim-lang}
 
+VERSION="0.0.1"
+
 
 function err {
     local exitcode=$?
@@ -195,7 +197,7 @@ case $1 in
         list_versions
         ;;
     *)
-        echo "Usage:"
+        echo "Usage - Nim version manager $VERSION:"
         echo "  $0 install <version>"
         ;;
 esac
