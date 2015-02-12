@@ -4,7 +4,7 @@
 NIM_REPO=http://github.com/Araq/Nim.git
 
 # Where to store nim-versions
-NIM_DIR=${NIM_DIR:-~/.nim-lang}
+NIM_DIR=${NIM_DIR:-~/.nimvm}
 
 VERSION="0.0.1"
 
@@ -19,7 +19,7 @@ function err {
         echo $msg >> "${LOGDIR}/error.log"
     fi
     $xtrace
-    return $exitcode
+    exit $exitcode
 }
 
 
@@ -110,7 +110,7 @@ function git_update_tag {
 
 function activate() {
     local version=$1
-    local version_dir=$NIM_DIR/$version
+    local version_dir="$NIM_DIR/versions/$version"
 
     if [ ! -d "$version_dir" ]; then
         die $LINENO "Version not found $version"
@@ -120,6 +120,8 @@ function activate() {
 function install_version() {
     local version=$1
     local version_dir="$NIM_DIR/versions/$version"
+
+    echo $version_dir
 
     mkdir -p $NIM_DIR/versions
 
@@ -156,8 +158,8 @@ function install_version() {
 }
 
 function remove_version() {
-    local version=$2
-    local version_dir=$NIM_DIR/version/$version
+    local version=$1
+    local version_dir="$NIM_DIR/versions/$version"
 
     if [ ! -d "$version_dir" ]; then
         die $LINENO "Version $version doesn't exist."
@@ -167,7 +169,7 @@ function remove_version() {
 }
 
 function list_versions() {
-    local versions_dir=$NIM_DIR/version
+    local version_dir="$NIM_DIR/versions"
 
     if [ ! -d "$versions_dir" ]; then
         die $LINENO "directory $NIM_DIR is invalid"
@@ -176,8 +178,8 @@ function list_versions() {
     ls $version_dir
 }
 
-while getopts "d:" opt; do
-    case $opt in
+while getopts ":a:" opt; do
+    case "${opt}" in
         d)
             NIM_DIR=$OPTARG
             ;;

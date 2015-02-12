@@ -6,9 +6,7 @@ nimvm_has() {
   type "$1" > /dev/null 2>&1
 }
 
-if [ -z "$NIMVM_DIR" ]; then
-  NIMVM_DIR="$HOME/.nimvm"
-fi
+NIMVM_DIR=${NIMVM_DIR:-$HOME/.nimvm}
 
 nimvm_latest_version() {
   echo "v0.0.1"
@@ -57,7 +55,7 @@ nimvm_download() {
 
 install_nimvm_from_git() {
   if [ -d "$NIMVM_DIR/.git" ]; then
-    echo "=> nimvm is already installed in $NIMVM_DIR, trying to update using git"
+    echo "=> nim-vm is already installed in $NIMVM_DIR, trying to update using git"
     printf "\r=> "
     cd "$NIMVM_DIR" && (command git fetch 2> /dev/null || {
       echo >&2 "Failed to update nimvm, run 'git fetch' in $NIMVM_DIR yourself." && exit 1
@@ -81,16 +79,16 @@ install_nimvm_as_script() {
 
   # Downloading to $NIMVM_DIR
   mkdir -p "$NIMVM_DIR"
-  if [ -d "$NIMVM_DIR/nimvm.sh" ]; then
-    echo "=> nim-vm is already installed in $NIMVM_DIR, trying to update the script"
+  if [ -d "$NIMVM_DIR/nim-vm" ]; then
+    echo "=> nimvm is already installed in $NIMVM_DIR, trying to update the script"
   else
-    echo "=> Downloading nim-vm as script to '$NIMVM_DIR'"
+    echo "=> Downloading nimvm as script to '$NIMVM_DIR'"
   fi
-  nimvm_download -s "$NIMVM_SOURCE_LOCAL" -o "$NIMVM_DIR/nim-vm.sh" || {
+  nimvm_download -s "$NIMVM_SOURCE_LOCAL" -o "$NIMVM_DIR/nim-vm" || {
     echo >&2 "Failed to download '$NIMVM_SOURCE_LOCAL'"
     return 1
   }
-  nimvm_download -s "$NIMVM_EXEC_SOURCE" -o "$NIMVM_DIR/nimvm-exec" || {
+  nimvm_download -s "$NIMVM_EXEC_SOURCE" -o "$NIMVM_DIR/nim-vm-exec" || {
     echo >&2 "Failed to download '$NIMVM_EXEC_SOURCE'"
     return 2
   }
@@ -150,7 +148,7 @@ nimvm_do_install() {
   local NIMVM_PROFILE
   NIMVM_PROFILE=$(nimvm_detect_profile)
 
-  SOURCE_STR="\nexport NIMVM_DIR=\"$NIMVM_DIR\"\n[ -s \"\$NIMVM_DIR/nimvm.sh\" ] && . \"\$NIMVM_DIR/nimvm.sh\"  # This loads nimvm"
+  SOURCE_STR="export PATH=\$PATH:\"$NIMVM_DIR\""
 
   if [ -z "$NIMVM_PROFILE" ] ; then
     echo "=> Profile not found. Tried $NIMVM_PROFILE (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
@@ -158,18 +156,17 @@ nimvm_do_install() {
     echo "=> Create it (touch $NIMVM_PROFILE) and run this script again"
     echo "   OR"
     echo "=> Append the following lines to the correct file yourself:"
-    printf "$SOURCE_STR"
+    printf "\n$SOURCE_STR"
     echo
   else
-    if ! grep -qc 'nimvm.sh' "$NIMVM_PROFILE"; then
+    if ! grep -qc '$SOURCE_STR' "$NIMVM_PROFILE"; then
       echo "=> Appending source string to $NIMVM_PROFILE"
-      printf "$SOURCE_STR\n" >> "$NIMVM_PROFILE"
+      printf "\n$SOURCE_STR\n" >> "$NIMVM_PROFILE"
     else
       echo "=> Source string already in $NIMVM_PROFILE"
     fi
   fi
 
-  echo "=> Close and reopen your terminal to start using nimvm"
   nimvm_reset
 }
 
@@ -180,7 +177,7 @@ nimvm_do_install() {
 nimvm_reset() {
   unset -f nimvm_reset nimvm_has nimvm_latest_version \
     nimvm_source nimvm_download install_nimvm_as_script install_nimvm_from_git \
-    nimvm_detect_profile nimvm_do_install
+    nimvm_detect_profile nimvm_check_global_modules nimvm_do_install
 }
 
 [ "_$NIMVM_ENV" = "_testing" ] || nimvm_do_install
