@@ -172,7 +172,7 @@ function list_versions() {
     local version_dir="$NIM_DIR/versions"
 
     if [ ! -d "$versions_dir" ]; then
-        die $LINENO "directory $NIM_DIR is invalid"
+        die $LINENO "No versions installed at $version_dir"
     fi
 
     ls $version_dir
