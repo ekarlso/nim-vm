@@ -6,7 +6,7 @@ NIM_REPO=http://github.com/Araq/Nim.git
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 
-VERSION="0.0.1"
+VERSION="0.0.2"
 
 
 function err {
@@ -200,6 +200,8 @@ case $1 in
         ;;
     *)
         echo "Usage - Nim version manager $VERSION:"
-        echo "  $0 install <version>"
+        echo "  $0 install <version>        install version"
+        echo "  $0 uninstall <version>      uninstall version"
+        echo "  $0 list                     list versions"
         ;;
 esac
