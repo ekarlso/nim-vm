@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# Nim repo to use
+NIM_REPO=http://github.com/Araq/Nim.git
+
+# Where to store nim-versions
+NIM_DIR=${NIM_DIR:-~/.nim-lang}
+
+
+function err {
+    local exitcode=$?
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    local msg="[ERROR] ${BASH_SOURCE[2]}:$1 $2"
+    echo $msg 1>&2;
+    if [[ -n ${LOGDIR} ]]; then
+        echo $msg >> "${LOGDIR}/error.log"
+    fi
+    $xtrace
+    return $exitcode
+}
+
+
+function backtrace {
+    if [ -z "$DEBUG" ]; then
+        return
+    fi
+    local level=$1
+    local deep=$((${#BASH_SOURCE[@]} - 1))
+    echo "[Call Trace]"
+    while [ $level -le $deep ]; do
+        echo "${BASH_SOURCE[$deep]}:${BASH_LINENO[$deep-1]}:${FUNCNAME[$deep-1]}"
+        deep=$((deep - 1))
+    done
+}
+
+# Prints line number and "message" then exits
+# die $LINENO "message"
+function die {
+    local exitcode=$?
+    set +o xtrace
+    local line=$1; shift
+    if [ $exitcode == 0 ]; then
+        exitcode=1
+    fi
+    backtrace 2
+    err $line "$*"
+    # Give buffers a second to flush
+    sleep 1
+    exit $exitcode
+}
+
+
+function git_timed {
+    local count=0
+    local timeout=0
+
+    if [[ -n "${GIT_TIMEOUT}" ]]; then
+        timeout=${GIT_TIMEOUT}
+    fi
+
+    until timeout -s SIGINT ${timeout} git "$@"; do
+        # 124 is timeout(1)'s special return code when it reached the
+        # timeout; otherwise assume fatal failure
+        if [[ $? -ne 124 ]]; then
+            die $LINENO "git call failed: [git $@]"
+        fi
+
+        count=$(($count + 1))
+        warn "timeout ${count} for git call: [git $@]"
+        if [ $count -eq 3 ]; then
+            die $LINENO "Maximum of 3 git retries reached"
+        fi
+        sleep 5
+    done
+}
+
+# git update using reference as a branch.
+# git_update_branch ref
+function git_update_branch {
+    local git_branch=$1
+
+    git checkout -f origin/$git_branch
+    # a local branch might not exist
+    git branch -D $git_branch || true
+    git checkout -b $git_branch
+}
+
+# git update using reference as a branch.
+# git_update_remote_branch ref
+function git_update_remote_branch {
+    local git_branch=$1
+
+    git checkout -b $git_branch -t origin/$git_branch
+}
+
+# git update using reference as a tag. Be careful editing source at that repo
+# as working copy will be in a detached mode
+# git_update_tag ref
+function git_update_tag {
+    local git_tag=$1
+
+    git tag -d $git_tag
+    # fetching given tag only
+    git_timed fetch origin tag $git_tag
+    git checkout -f $git_tag
+}
+
+function activate() {
+    local version=$1
+    local version_dir=$NIM_DIR/$version
+
+    if [ ! -d "$version_dir" ]; then
+        die $LINENO "Version not found $version"
+    fi
+}
+
+function install_version() {
+    local version=$1
+    local version_dir="$NIM_DIR/versions/$version"
+
+    mkdir -p $NIM_DIR/versions
+
+    if [ -d $version_dir ]; then
+        die $LINENO "Version $version already exists.."
+    fi
+
+    NIM_CACHE=$NIM_DIR/repo_cache
+    if [ ! -d $NIM_CACHE ]; then
+        echo "No cacehd repository found, cloning $NIM_REPO to $NIM_CACHE..."
+        git_timed clone $NIM_REPO $NIM_CACHE
+    else
+        echo "Using cached repository $NIM_CACHE"
+    fi
+
+    cp -R $NIM_CACHE $version_dir
+
+    cd $version_dir
+    git remote set-url origin $NIM_REPO
+    git_timed fetch origin
+
+    # handle git_ref accordingly to type (tag, branch)
+    if [[ -n "`git show-ref refs/tags/$version`" ]]; then
+        git_update_tag $version
+    elif [[ -n "`git show-ref refs/heads/$version`" ]]; then
+        git_update_branch $version
+    elif [[ -n "`git show-ref refs/remotes/origin/$version`" ]]; then
+        git_update_remote_branch $version
+    else
+        die $LINENO "$version is neither branch nor tag"
+    fi
+
+    bash build.sh
+}
+
+function remove_version() {
+    local version=$2
+    local version_dir=$NIM_DIR/version/$version
+
+    if [ ! -d "$version_dir" ]; then
+        die $LINENO "Version $version doesn't exist."
+    fi
+
+    rm -rf "$version_dir"
+}
+
+function list_versions() {
+    local versions_dir=$NIM_DIR/version
+
+    if [ ! -d "$versions_dir" ]; then
+        die $LINENO "directory $NIM_DIR is invalid"
+    fi
+
+    ls $version_dir
+}
+
+while getopts "d:" opt; do
+    case $opt in
+        d)
+            NIM_DIR=$OPTARG
+            ;;
+    esac
+done
+
+shift "$((OPTIND-1))" # Shift off the options and optional --.
+
+case $1 in
+    install)
+        install_version $2
+        ;;
+    uninstall)
+        remove_version $2
+        ;;
+    list)
+        list_versions
+        ;;
+    *)
+        echo "Usage:"
+        echo "  $0 install <version>"
+        ;;
+esac
