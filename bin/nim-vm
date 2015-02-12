@@ -6,7 +6,7 @@ NIM_REPO=http://github.com/Araq/Nim.git
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 
-VERSION="0.0.3"
+VERSION="0.0.4"
 
 
 function err {
@@ -178,7 +178,7 @@ function list_versions() {
     ls $version_dir
 }
 
-while getopts ":a:" opt; do
+while getopts ":d:" opt; do
     case "${opt}" in
         d)
             NIM_DIR=$OPTARG
