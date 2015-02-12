@@ -9,26 +9,22 @@ nimvm_has() {
 NIMVM_DIR=${NIMVM_DIR:-$HOME/.nimvm}
 
 nimvm_latest_version() {
-  echo "v0.0.2"
+  echo "v0.0.3"
 }
 
 #
 # Outputs the location to NIMVM depending on:
 # * The availability of $NIMVM_SOURCE
 # * The method used ("script" or "git" in the script, defaults to "git")
-# NIMVM_SOURCE always takes precedence unless the method is "script-nimvm-exec"
 #
 nimvm_source() {
-  local NIMVM_METHOD
-  NIMVM_METHOD="$1"
-  local NIMVM_SOURCE_URL
-  NIMVM_SOURCE_URL="$NIMVM_SOURCE"
-  if [ "_$NIMVM_METHOD" = "_script-nimvm-exec" ]; then
-    NIMVM_SOURCE_URL="https://raw.githubusercontent.com/ekarlso/nim-vm/$(nimvm_latest_version)/nim-vm-exec"
+  local NIMVM_METHOD="$1"
+  local NIMVM_SOURCE_URL="$NIMVM_SOURCE"
+
+  if [ "_$NIMVM_METHOD" = "_script" ]; then
+      NIMVM_SOURCE_URL="https://raw.githubusercontent.com/ekarlso/nim-vm/$(nimvm_latest_version)/nim-vm"
   elif [ -z "$NIMVM_SOURCE_URL" ]; then
-    if [ "_$NIMVM_METHOD" = "_script" ]; then
-      NIMVM_SOURCE_URL="https://raw.githubusercontent.com/ekarlso/nim-vm/$(nimvm_latest_version)/nim-vm.sh"
-    elif [ "_$NIMVM_METHOD" = "_git" ] || [ -z "$NIMVM_METHOD" ]; then
+    if [ "_$NIMVM_METHOD" = "_git" ] || [ -z "$NIMVM_METHOD" ]; then
       NIMVM_SOURCE_URL="https://github.com/ekarlso/nim-vm.git"
     else
       echo >&2 "Unexpected value \"$NIMVM_METHOD\" for \$NIMVM_METHOD"
@@ -72,30 +68,23 @@ install_nimvm_from_git() {
 }
 
 install_nimvm_as_script() {
-  local NIMVM_SOURCE_LOCAL
-  NIMVM_SOURCE_LOCAL=$(nimvm_source script)
-  local NIMVM_EXEC_SOURCE
-  NIMVM_EXEC_SOURCE=$(nimvm_source script-nimvm-exec)
+  local nimvm_source=$(nimvm_source script)
 
-  # Downloading to $NIMVM_DIR
-  mkdir -p "$NIMVM_DIR"
-  if [ -d "$NIMVM_DIR/nim-vm" ]; then
-    echo "=> nimvm is already installed in $NIMVM_DIR, trying to update the script"
+  local bindir=$NIMVM_DIR/bin
+  # Downloading to $NVM_DIR
+  mkdir -p "$bindir"
+
+  if [ -f "$bindir/nim-vm" ]; then
+    echo "=> nim-vm is already installed in $bindir, trying to update the script"
   else
-    echo "=> Downloading nimvm as script to '$NIMVM_DIR'"
+    echo "=> Downloading nim-vm as script to '$bindir'"
   fi
-  nimvm_download -s "$NIMVM_SOURCE_LOCAL" -o "$NIMVM_DIR/nim-vm" || {
-    echo >&2 "Failed to download '$NIMVM_SOURCE_LOCAL'"
+  nimvm_download -s "$nimvm_source" -o "$bindir/nim-vm" || {
+    echo >&2 "Failed to download '$nimvm_source'"
     return 1
   }
-  nimvm_download -s "$NIMVM_EXEC_SOURCE" -o "$NIMVM_DIR/nim-vm-exec" || {
-    echo >&2 "Failed to download '$NIMVM_EXEC_SOURCE'"
-    return 2
-  }
-  chmod a+x "$NIMVM_DIR/nimvm-exec" || {
-    echo >&2 "Failed to mark '$NIMVM_DIR/nimvm-exec' as executable"
-    return 3
-  }
+
+  chmod +x $bindir/nim-vm
 }
 
 #
@@ -126,7 +115,7 @@ nimvm_do_install() {
     elif nimvm_has "nimvm_download"; then
       install_nimvm_as_script
     else
-      echo >&2 "You need git, curl, or wget to install nim-vm"
+      echo >&2 "You need git, curl, or wget to install nvm"
       exit 1
     fi
   elif [ "~$METHOD" = "~git" ]; then
@@ -143,8 +132,6 @@ nimvm_do_install() {
     install_nimvm_as_script
   fi
 
-  echo
-
   local NIMVM_PROFILE
   NIMVM_PROFILE=$(nimvm_detect_profile)
 
@@ -159,7 +146,7 @@ nimvm_do_install() {
     printf "\n$SOURCE_STR"
     echo
   else
-    if ! grep -qc '$SOURCE_STR' "$NIMVM_PROFILE"; then
+    if ! grep -qc "$SOURCE_STR" "$NIMVM_PROFILE"; then
       echo "=> Appending source string to $NIMVM_PROFILE"
       printf "\n$SOURCE_STR\n" >> "$NIMVM_PROFILE"
     else
