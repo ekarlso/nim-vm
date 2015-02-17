@@ -135,7 +135,7 @@ nimvm_do_install() {
   local NIMVM_PROFILE
   NIMVM_PROFILE=$(nimvm_detect_profile)
 
-  SOURCE_STR="export PATH=\$PATH:\"$NIMVM_DIR\""
+  SOURCE_STR="export PATH=\$PATH:\"$NIMVM_DIR/bin\""
 
   if [ -z "$NIMVM_PROFILE" ] ; then
     echo "=> Profile not found. Tried $NIMVM_PROFILE (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
