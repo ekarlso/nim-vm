@@ -8,9 +8,8 @@ NIM_REPO=http://github.com/Araq/Nim.git
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 
-VERSION="0.1.1"
+VERSION="0.2.0"
 
-echo $DIR
 nimvm_version() {
     local version=$VERSION
     path=$(dirname $(readlink ${BASH_SOURCE[0]}))/..
@@ -267,5 +266,7 @@ case $1 in
         echo "  $0 install <version>        install version"
         echo "  $0 uninstall <version>      uninstall version"
         echo "  $0 list                     list versions"
+        echo "  $0 active                   show active version"
+        echo "  $0 use                      use a version"
         ;;
 esac

@@ -11,7 +11,7 @@ METHOD=${METHOD:-}
 NIMVM_DIR=${NIMVM_DIR:-$HOME/.nimvm}
 
 nimvm_latest_version() {
-  echo "v0.1.1"
+  echo "v0.2.0"
 }
 
 #
