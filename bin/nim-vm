@@ -157,6 +157,8 @@ function install_version() {
     fi
 
     bash build.sh
+
+    ln -nfs $version_dir/bin/nim $NIM_DIR/bin
 }
 
 function remove_version() {
