@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
 # Nim repo to use
 NIM_REPO=http://github.com/Araq/Nim.git
 
@@ -7,6 +9,16 @@ NIM_REPO=http://github.com/Araq/Nim.git
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 
 VERSION="0.1.1"
+
+echo $DIR
+nimvm_version() {
+    local version=$VERSION
+    path=$(dirname $(readlink ${BASH_SOURCE[0]}))/..
+    [ -d "$path/.git" ] && {
+        version=$(cd $path; git log --pretty=format:'%h' -n 1)
+    }
+    echo $version
+}
 
 function err {
     local exitcode=$?
@@ -157,7 +169,7 @@ function install_version() {
 
     bash build.sh
 
-    ln -nfs $version_dir/bin/nim $NIM_DIR/bin
+    ln -nfs $version_dir/bin/nim $NIM_DIR/bin/nim-$version
 }
 
 function remove_version() {
@@ -169,6 +181,20 @@ function remove_version() {
     fi
 
     rm -rf "$version_dir"
+}
+
+function get_active_version() {
+    local active_link=$NIM_DIR/bin/nim
+    path=$(readlink $active_link)
+    if [ -f "$path" ]; then
+        echo $(basename $(cd $(dirname $path)/..; pwd))
+    fi
+}
+
+function active_version() {
+    local active=$(get_active_version)
+    [ -z "$active" ] && die $LINENO "No active version"
+    echo $active
 }
 
 function get_versions() {
@@ -186,10 +212,28 @@ function get_versions() {
 }
 
 function list_versions() {
+    local active=$(get_active_version)
     for i in $(get_versions); do
-        echo "-> $i"
+        echo -ne "-> $i"
+        if [ "$active" == $i ]; then
+            echo -ne " (active)"
+        fi
+        echo
     done
+}
 
+function use_version() {
+    local version=$1
+    local version_dir="$NIM_DIR/versions/$version"
+
+    if [ ! -d "$version_dir" ]; then
+        die $LINENO "Version $version doesn't exist. Can't activate."
+    fi
+
+    rm $NIM_DIR/bin/nim
+    ln -s $version_dir/bin/nim $NIM_DIR/bin/nim
+
+    echo "Now using $version at $NIM_DIR/bin/nim"
 }
 
 while getopts ":d:" opt; do
@@ -212,8 +256,14 @@ case $1 in
     list)
         list_versions
         ;;
+    active)
+        active_version
+        ;;
+    use)
+        use_version $2
+        ;;
     *)
-        echo "Usage - Nim version manager $VERSION:"
+        echo "Usage - Nim version manager $(nimvm_version):"
         echo "  $0 install <version>        install version"
         echo "  $0 uninstall <version>      uninstall version"
         echo "  $0 list                     list versions"
