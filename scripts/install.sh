@@ -9,7 +9,7 @@ nimvm_has() {
 NIMVM_DIR=${NIMVM_DIR:-$HOME/.nimvm}
 
 nimvm_latest_version() {
-  echo "v0.0.4"
+  echo "v0.1.0"
 }
 
 #

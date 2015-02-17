@@ -6,7 +6,7 @@ NIM_REPO=http://github.com/Araq/Nim.git
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 
-VERSION="0.0.4"
+VERSION="0.1.0"
 
 
 function err {
