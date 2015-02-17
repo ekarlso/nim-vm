@@ -121,6 +121,10 @@ function install_version() {
     local version=$1
     local version_dir="$NIM_DIR/versions/$version"
 
+    if [ -z "$version" ]; then
+        die $LINENO "Version not specified."
+    fi
+
     mkdir -p $NIM_DIR/versions
 
     if [ -d $version_dir ]; then
