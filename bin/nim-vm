@@ -121,8 +121,6 @@ function install_version() {
     local version=$1
     local version_dir="$NIM_DIR/versions/$version"
 
-    echo $version_dir
-
     mkdir -p $NIM_DIR/versions
 
     if [ -d $version_dir ]; then
