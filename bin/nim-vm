@@ -8,7 +8,6 @@ NIM_DIR=${NIM_DIR:-~/.nimvm}
 
 VERSION="0.1.1"
 
-
 function err {
     local exitcode=$?
     local xtrace=$(set +o | grep xtrace)
@@ -172,14 +171,25 @@ function remove_version() {
     rm -rf "$version_dir"
 }
 
-function list_versions() {
+function get_versions() {
     local version_dir="$NIM_DIR/versions"
-
-    if [ ! -d "$versions_dir" ]; then
+    if [ ! -d "$version_dir" ]; then
         die $LINENO "No versions installed at $version_dir"
     fi
 
-    ls $version_dir
+    versions=""
+    for i in $version_dir/*; do
+        name=$(basename $i)
+        versions+=" $name"
+    done
+    echo $versions
+}
+
+function list_versions() {
+    for i in $(get_versions); do
+        echo "-> $i"
+    done
+
 }
 
 while getopts ":d:" opt; do
