@@ -1,10 +1,12 @@
 #!/bin/bash
 
-set -e
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 nimvm_has() {
   type "$1" > /dev/null 2>&1
 }
+
+METHOD=${METHOD:-}
 
 NIMVM_DIR=${NIMVM_DIR:-$HOME/.nimvm}
 
@@ -47,6 +49,18 @@ nimvm_download() {
                            -e 's/-C - /-c /')
     wget $ARGS
   fi
+}
+
+install_nimvm_as_symlink() {
+  local bindir=$NIMVM_DIR/bin
+
+  # This assumes we're installing from the repository in symlink mode. useful for dev / test or if you want to be on the latest version of the repository
+  if [ -x "$NIMVM_DIR/nim-vm" ]; then
+    die $LINENO "nim-vm is already installed at $NIMVM_DIR."
+  fi
+
+  mkdir -p $bindir
+  ln -nfs $DIR/../bin/nim-vm $bindir
 }
 
 install_nimvm_from_git() {
@@ -130,6 +144,11 @@ nimvm_do_install() {
       exit 1
     fi
     install_nimvm_as_script
+  elif [ "~$METHOD" = "~symlink" ]; then
+    install_nimvm_as_symlink
+  else
+    echo "Unsupported method $METHOD."
+    exit 1
   fi
 
   local NIMVM_PROFILE
@@ -167,4 +186,4 @@ nimvm_reset() {
     nimvm_detect_profile nimvm_check_global_modules nimvm_do_install
 }
 
-[ "_$NIMVM_ENV" = "_testing" ] || nimvm_do_install
+nimvm_do_install
