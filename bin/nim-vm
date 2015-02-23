@@ -243,7 +243,7 @@ function list_versions() {
         exit 0
     fi
 
-    for i in ; do
+    for i in $versions; do
         echo -ne "-> $i"
         if [ "$active" == $i ]; then
             echo -ne " (active)"
