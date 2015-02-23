@@ -238,7 +238,7 @@ function list_versions() {
     local active=$(get_active_version)
     local versions=$(get_versions)
 
-    if [ -z "$version" ]; then
+    if [ -z "$versions" ]; then
         echo "No versions installed currently"
         exit 0
     fi
