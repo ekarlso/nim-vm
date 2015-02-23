@@ -10,12 +10,25 @@ NIM_DIR=${NIM_DIR:-~/.nimvm}
 
 VERSION="0.2.0"
 
+get_location() {
+    link=$(readlink ${BASH_SOURCE[0]})
+
+    if [ -f "$link" ]; then
+        path=$(dirname $link)/..
+    else
+        path=$DIR/..
+    fi
+
+    echo $path
+}
 nimvm_version() {
     local version=$VERSION
-    path=$(dirname $(readlink ${BASH_SOURCE[0]}))/..
+    path=$(get_location)
+
     [ -d "$path/.git" ] && {
         version=$(cd $path; git log --pretty=format:'%h' -n 1)
     }
+
     echo $version
 }
 
