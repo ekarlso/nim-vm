@@ -264,7 +264,7 @@ function use_version() {
     echo "Now using $version at $NIM_DIR/bin/nim"
 }
 
-while getopts ":db:" opt; do
+while getopts ":d:b:" opt; do
     case "${opt}" in
         b)
             NIM_BIN_DIR=$OPTARG
