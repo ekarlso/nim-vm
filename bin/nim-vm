@@ -220,7 +220,7 @@ function active_version() {
 function get_versions() {
     local version_dir="$NIM_DIR/versions"
     if [ ! -d "$version_dir" ]; then
-        die $LINENO "No versions installed at $version_dir"
+        return
     fi
 
     versions=""
