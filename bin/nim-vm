@@ -236,12 +236,14 @@ function get_versions() {
 
 function list_versions() {
     local active=$(get_active_version)
-    if [ -z "$active" ]; then
+    local versions=$(get_versions)
+
+    if [ -z "$version" ]; then
         echo "No versions installed currently"
         exit 0
     fi
 
-    for i in $(get_versions); do
+    for i in ; do
         echo -ne "-> $i"
         if [ "$active" == $i ]; then
             echo -ne " (active)"
