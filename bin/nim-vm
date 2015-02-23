@@ -7,6 +7,7 @@ NIM_REPO=http://github.com/Araq/Nim.git
 
 # Where to store nim-versions
 NIM_DIR=${NIM_DIR:-~/.nimvm}
+NIM_BIN_DIR=${NIM_BIN_DIR:-}
 
 VERSION="0.2.0"
 
@@ -21,6 +22,7 @@ get_location() {
 
     echo $path
 }
+
 nimvm_version() {
     local version=$VERSION
     path=$(get_location)
@@ -131,6 +133,12 @@ function git_update_tag {
     git checkout -f $git_tag
 }
 
+function get_bindir() {
+    # Default to $NIMDIR/bin
+    bindir=$NIM_DIR/bin
+    [ ! -z "$NIM_BIN_DIR" ] && bindir=$NIM_BIN_DIR
+    echo $bindir
+}
 function activate() {
     local version=$1
     local version_dir="$NIM_DIR/versions/$version"
@@ -217,6 +225,9 @@ function get_versions() {
 
     versions=""
     for i in $version_dir/*; do
+        if [ ! -d $i/bin/nim ]; then
+            continue
+        fi
         name=$(basename $i)
         versions+=" $name"
     done
@@ -225,6 +236,11 @@ function get_versions() {
 
 function list_versions() {
     local active=$(get_active_version)
+    if [ -z "$active" ]; then
+        echo "No versions installed currently"
+        exit 0
+    fi
+
     for i in $(get_versions); do
         echo -ne "-> $i"
         if [ "$active" == $i ]; then
@@ -248,8 +264,11 @@ function use_version() {
     echo "Now using $version at $NIM_DIR/bin/nim"
 }
 
-while getopts ":d:" opt; do
+while getopts ":db:" opt; do
     case "${opt}" in
+        b)
+            NIM_BIN_DIR=$OPTARG
+            ;;
         d)
             NIM_DIR=$OPTARG
             ;;
