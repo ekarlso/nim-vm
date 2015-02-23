@@ -225,7 +225,7 @@ function get_versions() {
 
     versions=""
     for i in $version_dir/*; do
-        if [ ! -d $i/bin/nim ]; then
+        if [ ! -x $i/bin/nim ]; then
             continue
         fi
         name=$(basename $i)
