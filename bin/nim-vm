@@ -189,7 +189,8 @@ function install_version() {
 
     bash build.sh
 
-    ln -nfs $version_dir/bin/nim $NIM_DIR/bin/nim-$version
+    bindir=$(get_bindir)
+    ln -nfs $version_dir/bin/nim $bindir/nim-$version
 }
 
 function remove_version() {
@@ -204,7 +205,8 @@ function remove_version() {
 }
 
 function get_active_version() {
-    local active_link=$NIM_DIR/bin/nim
+    local bindir=$(get_bindir)
+    local active_link=$bindir/nim
     path=$(readlink $active_link)
     if [ -f "$path" ]; then
         echo $(basename $(cd $(dirname $path)/..; pwd))
@@ -255,15 +257,16 @@ function list_versions() {
 function use_version() {
     local version=$1
     local version_dir="$NIM_DIR/versions/$version"
+    local bindir=$(get_bindir)
 
     if [ ! -d "$version_dir" ]; then
         die $LINENO "Version $version doesn't exist. Can't activate."
     fi
 
-    rm $NIM_DIR/bin/nim
-    ln -s $version_dir/bin/nim $NIM_DIR/bin/nim
+    [ -w "$bindir/nim" ] && rm $bindir/nim
+    ln -s $version_dir/bin/nim $bindir/nim
 
-    echo "Now using $version at $NIM_DIR/bin/nim"
+    echo "Now using $version at $bindir/nim"
 }
 
 while getopts ":d:b:" opt; do
