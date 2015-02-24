@@ -190,7 +190,7 @@ function install_version() {
     bash build.sh
 
     bindir=$(get_bindir)
-    ln -nfs $version_dir/bin/nim $bindir/nim-$version
+    ln -nfs $version_dir/bin/nim $bindir/nim.$version
 }
 
 function remove_version() {
