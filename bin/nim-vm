@@ -192,7 +192,9 @@ function install_version() {
     bash build.sh
 
     bindir=$(get_bindir)
-    [ "$NIMVM_VERSION_LINK" = 1 ] && ln -nfs $version_dir/bin/nim $bindir/nim.$version
+    if [ "$NIMVM_VERSION_LINK" = "1" ]; then
+        ln -nfs $version_dir/bin/nim $bindir/nim.$version
+    fi
 }
 
 function remove_version() {
