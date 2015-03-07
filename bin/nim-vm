@@ -11,7 +11,28 @@ NIM_BIN_DIR=${NIM_BIN_DIR:-}
 
 NIMVM_VERSION_LINK=${NIMVM_VERSION_LINK:-1}
 
-VERSION="0.2.0"
+# if version "repo" is used the directory used is $NIM_REPO_LOCATION
+
+platform='unknown'
+unamestr=`uname`
+if [[ "$unamestr" == 'Linux' ]]; then
+   platform='linux'
+elif [[ "$unamestr" == 'Darwin' ]]; then
+   platform='darwin'
+fi
+
+if [ "$platform" == "darwin" ]; then
+    KOCH_FLAGS="-d:release -d:useGnuReadline -d:nativeStacktrace -d:avoidTimeMachine"
+    TIMEOUT_CMD="gtimeout"
+elif [ "$platform" == "linux" ]; then
+    KOCH_FLAGS="-d:release -d:useGnuReadline -d:nativeStacktrace"
+    TIMEOUT_CMD="timeout"
+else
+    KOCH_FLAGS="-d:release"
+    TIMEOUT_CMD="timeout"
+fi
+
+VERSION="0.3.0"
 
 get_location() {
     link=$(readlink ${BASH_SOURCE[0]})
@@ -88,7 +109,7 @@ function git_timed {
         timeout=${GIT_TIMEOUT}
     fi
 
-    until timeout -s SIGINT ${timeout} git "$@"; do
+    until $TIMEOUT_CMD -s SIGINT ${timeout} git "$@"; do
         # 124 is timeout(1)'s special return code when it reached the
         # timeout; otherwise assume fatal failure
         if [[ $? -ne 124 ]]; then
@@ -150,9 +171,51 @@ function activate() {
     fi
 }
 
+function koch_build() {
+    if [ ! -d "csources" ]; then
+        case "$1" in
+            (v0.9.*)
+                git clone --branch v0.9.4 --depth 1 https://github.com/nim-lang/csources.git
+                cd "csources"
+                sh build.sh
+                cd ".."
+                ./bin/nimrod c koch
+                ;;
+            (*) 
+                git clone --depth 1 https://github.com/nim-lang/csources.git
+                cd "csources"
+                sh build.sh
+                cd ".."
+                ./bin/nim c koch
+                ;;
+        esac
+    fi
+
+    ./koch boot $KOCH_FLAGS
+
+    case "$1" in
+        (v0.9.*)
+            mv bin/nimrod bin/nim
+            ;;
+    esac
+}
+
+function get_versiondir() {
+    local version=$1
+    if [ "$version" == "repo" ]; then
+        if [ -z "$NIM_REPO_LOCATION" ]; then
+            echo "Nim reposiory location (NIM_REPO_LOCATION) not set"
+            exit 5
+        fi
+        echo "$NIM_REPO_LOCATION"
+    else
+        echo "$NIM_DIR/versions/$version"
+    fi
+}
+
 function install_version() {
     local version=$1
-    local version_dir="$NIM_DIR/versions/$version"
+    local version_dir=$(get_versiondir $version)
 
     if [ -z "$version" ]; then
         die $LINENO "Version not specified."
@@ -189,7 +252,63 @@ function install_version() {
         die $LINENO "$version is neither branch nor tag"
     fi
 
-    bash build.sh
+    koch_build $version
+
+    bindir=$(get_bindir)
+    if [ "$NIMVM_VERSION_LINK" = "1" ]; then
+        ln -nfs $version_dir/bin/nim $bindir/nim.$version
+    fi
+}
+
+function update_version() {
+    local version=$1
+    local version_dir=$(get_versiondir $version)
+
+    if [ -z "$version" ]; then
+        die $LINENO "Version not specified."
+    fi
+
+    if [ ! -d $version_dir ]; then
+        die $LINENO "Version $version does not exists.."
+    fi
+
+    cd $version_dir
+    git_timed fetch origin
+
+    # handle git_ref accordingly to type (tag, branch)
+    if [[ -n "`git show-ref refs/tags/$version`" ]]; then
+        git_update_tag $version
+    elif [[ -n "`git show-ref refs/heads/$version`" ]]; then
+        git_update_branch $version
+    elif [[ -n "`git show-ref refs/remotes/origin/$version`" ]]; then
+        git_update_remote_branch $version
+    else
+        die $LINENO "$version is neither branch nor tag"
+    fi
+
+    koch_build $version
+
+    bindir=$(get_bindir)
+    if [ "$NIMVM_VERSION_LINK" = "1" ]; then
+        ln -nfs $version_dir/bin/nim $bindir/nim.$version
+    fi
+}
+
+function rebuild_version() {
+    local version=$1
+    local version_dir=$(get_versiondir $version)
+
+    if [ -z "$version" ]; then
+        die $LINENO "Version not specified."
+    fi
+
+    if [ ! -d $version_dir ]; then
+        die $LINENO "Version $version does not exists.."
+    fi
+
+    cd $version_dir
+
+    koch_build $version
 
     bindir=$(get_bindir)
     if [ "$NIMVM_VERSION_LINK" = "1" ]; then
@@ -199,7 +318,10 @@ function install_version() {
 
 function remove_version() {
     local version=$1
-    local version_dir="$NIM_DIR/versions/$version"
+    if [ $version == "repo" ]; then
+        die $LINENO "Cannot remove 'repo' version"
+    fi
+    local version_dir=$(get_versiondir $version)
 
     if [ ! -d "$version_dir" ]; then
         die $LINENO "Version $version doesn't exist."
@@ -212,7 +334,9 @@ function get_active_version() {
     local bindir=$(get_bindir)
     local active_link=$bindir/nim
     path=$(readlink $active_link)
-    if [ -f "$path" ]; then
+    if [[ "$NIM_REPO_LOCATION/bin/nim" == "$path" ]]; then
+        echo "repo"
+    elif [ -f "$path" ]; then
         echo $(basename $(cd $(dirname $path)/..; pwd))
     fi
 }
@@ -260,10 +384,19 @@ function list_versions() {
 
 function use_version() {
     local version=$1
-    local version_dir="$NIM_DIR/versions/$version"
+    local version_dir=$(get_versiondir $version)
     local bindir=$(get_bindir)
 
+    if [ "$version" == "repo" ]; then
+        if [ -z "$NIM_REPO_LOCATION" ]; then
+            die $LINENO "Nim reposiory location (NIM_REPO_LOCATION) not set"
+            
+        fi
+        local version_dir="$NIM_REPO_LOCATION"
+    fi
+
     if [ ! -d "$version_dir" ]; then
+        echo $version_dir
         die $LINENO "Version $version doesn't exist. Can't activate."
     fi
 
@@ -289,9 +422,26 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 case $1 in
     install)
         install_version $2
+        use_version $2
         ;;
     uninstall)
         remove_version $2
+        ;;
+    update)
+        if [ -z "$2" ]; then
+            update_version $(get_active_version)
+        else
+            update_version $2
+            use_version $2
+        fi
+        ;;
+    rebuild)
+        if [ -z "$2" ]; then
+            rebuild_version $(get_active_version)
+        else
+            rebuild_version $2
+            use_version $2
+        fi
         ;;
     list)
         list_versions
@@ -306,6 +456,8 @@ case $1 in
         echo "Usage - Nim version manager $(nimvm_version):"
         echo "  $0 install <version>        install version"
         echo "  $0 uninstall <version>      uninstall version"
+        echo "  $0 update <version>         update version"
+        echo "  $0 rebuild <version>        rebuild version"
         echo "  $0 list                     list versions"
         echo "  $0 active                   show active version"
         echo "  $0 use                      use a version"
