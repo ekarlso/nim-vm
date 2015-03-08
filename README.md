@@ -8,7 +8,7 @@ Nim Version Manager
 
 ```
 mkdir -p ~/.nimvm/bin
-wget -o ~/.nimvm/bin/nim-vm https://raw.githubusercontent.com/ekarlso/nimvm/master/bin/nim-vm
+curl -o ~/.nimvm/bin/nim-vm https://raw.githubusercontent.com/ekarlso/nimvm/master/bin/nim-vm
 chmod +x ~/.nimvm/bin/nim-vm
 ```
 
