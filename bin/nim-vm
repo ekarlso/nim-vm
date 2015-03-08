@@ -182,7 +182,7 @@ function koch_build() {
                 cd ".."
                 ./bin/nimrod c koch
                 ;;
-            (*) 
+            (*)
                 git clone --depth 1 https://github.com/nim-lang/csources.git
                 cd "csources"
                 sh build.sh
@@ -401,7 +401,7 @@ function use_version() {
     if [ "$version" == "repo" ]; then
         if [ -z "$NIM_REPO_LOCATION" ]; then
             die $LINENO "Nim reposiory location (NIM_REPO_LOCATION) not set"
-            
+
         fi
         local version_dir="$NIM_REPO_LOCATION"
     fi
@@ -420,7 +420,7 @@ function use_version() {
 while getopts ":d:b:a:" opt; do
     case "${opt}" in
         a)
-            NIM_ACTIVATE=1
+            NIMVM_ACTIVATE=1
             shift
             ;;
         b)
@@ -437,7 +437,7 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 case $1 in
     install)
         install_version $2
-        if NIM_ACTIVATE = 1; then
+        if NIMVM_ACTIVATE = 1; then
             use_version $2
         fi
         ;;
@@ -449,7 +449,7 @@ case $1 in
             update_version $(get_active_version)
         else
             update_version $2
-            if NIM_ACTIVATE = 1; then
+            if NIMVM_ACTIVATE = 1; then
             	use_version $2
             fi
         fi
@@ -459,7 +459,7 @@ case $1 in
             rebuild_version $(get_active_version)
         else
             rebuild_version $2
-            if NIM_ACTIVATE = 1; then
+            if NIMVM_ACTIVATE = 1; then
             	use_version $2
             fi
         fi
