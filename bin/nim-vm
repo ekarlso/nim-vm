@@ -9,6 +9,7 @@ NIM_REPO=http://github.com/Araq/Nim.git
 NIM_DIR=${NIM_DIR:-~/.nimvm}
 NIM_BIN_DIR=${NIM_BIN_DIR:-}
 
+NIMVM_ACTIVATE=0
 NIMVM_VERSION_LINK=${NIMVM_VERSION_LINK:-1}
 
 # if version "repo" is used the directory used is $NIM_REPO_LOCATION
@@ -413,8 +414,12 @@ function use_version() {
     echo "Now using $version at $bindir/nim"
 }
 
-while getopts ":d:b:" opt; do
+while getopts ":d:b:a:" opt; do
     case "${opt}" in
+        a)
+            NIM_ACTIVATE=1
+            shift
+            ;;
         b)
             NIM_BIN_DIR=$OPTARG
             ;;
@@ -429,7 +434,9 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 case $1 in
     install)
         install_version $2
-        use_version $2
+        if NIM_ACTIVATE = 1; then
+            use_version $2
+        fi
         ;;
     uninstall)
         remove_version $2
@@ -439,7 +446,9 @@ case $1 in
             update_version $(get_active_version)
         else
             update_version $2
-            use_version $2
+            if NIM_ACTIVATE = 1; then
+            	use_version $2
+            fi
         fi
         ;;
     rebuild)
@@ -447,7 +456,9 @@ case $1 in
             rebuild_version $(get_active_version)
         else
             rebuild_version $2
-            use_version $2
+            if NIM_ACTIVATE = 1; then
+            	use_version $2
+            fi
         fi
         ;;
     list)
@@ -467,6 +478,6 @@ case $1 in
         echo "  $0 rebuild (<version>)      rebuild current (or version and use it)"
         echo "  $0 list                     list versions"
         echo "  $0 active                   show active version"
-        echo "  $0 use                      use a version"
+        echo "  $0 activate|use             use a version"
         ;;
 esac
