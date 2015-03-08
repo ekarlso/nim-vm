@@ -454,10 +454,10 @@ case $1 in
         ;;
     *)
         echo "Usage - Nim version manager $(nimvm_version):"
-        echo "  $0 install <version>        install version"
+        echo "  $0 install <version>        install version and use it"
         echo "  $0 uninstall <version>      uninstall version"
-        echo "  $0 update <version>         update version"
-        echo "  $0 rebuild <version>        rebuild version"
+        echo "  $0 update (<version>)       update current (or version and use it)"
+        echo "  $0 rebuild (<version>)      rebuild current (or version and use it)"
         echo "  $0 list                     list versions"
         echo "  $0 active                   show active version"
         echo "  $0 use                      use a version"
