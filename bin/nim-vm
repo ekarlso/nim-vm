@@ -195,7 +195,10 @@ function koch_build() {
 
     case "$1" in
         (v0.9.*)
-            mv bin/nimrod bin/nim
+            if [ ! -f bin/nim ]; then
+                # make it available as nim
+                ln -s nimrod bin/nim
+            fi
             ;;
     esac
 }
