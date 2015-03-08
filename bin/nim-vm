@@ -215,13 +215,14 @@ function get_versiondir() {
 
 function install_version() {
     local version=$1
-    local version_dir=$(get_versiondir $version)
 
     if [ -z "$version" ]; then
         die $LINENO "Version not specified."
     fi
 
     mkdir -p $NIM_DIR/versions
+
+    local version_dir=$(get_versiondir $version)
 
     if [ -d $version_dir ]; then
         die $LINENO "Version $version already exists.."
@@ -262,10 +263,15 @@ function install_version() {
 
 function update_version() {
     local version=$1
-    local version_dir=$(get_versiondir $version)
 
     if [ -z "$version" ]; then
         die $LINENO "Version not specified."
+    fi
+
+    local version_dir=$(get_versiondir $version)
+
+    if [ "$version" == "repo" ]; then
+        die $LINENO "Local repo should be handled manually."
     fi
 
     if [ ! -d $version_dir ]; then
@@ -296,11 +302,12 @@ function update_version() {
 
 function rebuild_version() {
     local version=$1
-    local version_dir=$(get_versiondir $version)
 
     if [ -z "$version" ]; then
         die $LINENO "Version not specified."
     fi
+
+    local version_dir=$(get_versiondir $version)
 
     if [ ! -d $version_dir ]; then
         die $LINENO "Version $version does not exists.."
