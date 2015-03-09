@@ -417,11 +417,10 @@ function use_version() {
     echo "Now using $version at $bindir/nim"
 }
 
-while getopts ":d:b:a:" opt; do
+while getopts ":d:b:a" opt; do
     case "${opt}" in
         a)
             NIMVM_ACTIVATE=1
-            shift
             ;;
         b)
             NIM_BIN_DIR=$OPTARG
@@ -437,7 +436,7 @@ shift "$((OPTIND-1))" # Shift off the options and optional --.
 case $1 in
     install)
         install_version $2
-        if NIMVM_ACTIVATE = 1; then
+        if [ "$NIMVM_ACTIVATE" = "1" ]; then
             use_version $2
         fi
         ;;
@@ -449,7 +448,7 @@ case $1 in
             update_version $(get_active_version)
         else
             update_version $2
-            if NIMVM_ACTIVATE = 1; then
+            if [ "$NIMVM_ACTIVATE" = "1" ]; then
             	use_version $2
             fi
         fi
@@ -459,7 +458,7 @@ case $1 in
             rebuild_version $(get_active_version)
         else
             rebuild_version $2
-            if NIMVM_ACTIVATE = 1; then
+            if [ "$NIMVM_ACTIVATE" = "1" ]; then
             	use_version $2
             fi
         fi
